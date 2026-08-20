@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ekiti State RI — Facility Weekly Vaccine Utilization</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:      #eef1f2;
+    --text-primary:   #0b1f24;
+    --text-secondary: #52514e;
+    --text-muted:     #7c8a8e;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --good:           #0ca30c;
+    --warning:        #fab219;
+    --serious:        #ec835a;
+    --critical:       #d03b3b;
+    --card-radius:    10px;
+    --brand-900:      #0a4152;
+    --brand-800:      #0d5266;
+    --brand-700:      #10647c;
+    --brand-600:      #137891;
+    --brand-tint:     color-mix(in srgb, var(--brand-700) 10%, var(--surface-1));
+    --brand-tint-strong: color-mix(in srgb, var(--brand-700) 16%, var(--surface-1));
+    --scope:          #137891;
+  }
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:      #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #93a3a7;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --good:           #0ca30c;
+    --warning:        #fab219;
+    --serious:        #ec835a;
+    --critical:       #d03b3b;
+    --brand-tint:     color-mix(in srgb, var(--brand-600) 16%, var(--surface-1));
+    --brand-tint-strong: color-mix(in srgb, var(--brand-600) 24%, var(--surface-1));
+    --scope:          #33a8c7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page-plane); color: var(--text-primary); -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 16px 60px; }
+
+  header.top {
+    background: linear-gradient(100deg, var(--brand-900), var(--brand-700) 70%, var(--brand-600));
+    color: #fff; margin: 0 0 18px; padding: 16px 16px;
+    display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  header.top .brand-id { display: flex; align-items: center; gap: 14px; }
+  header.top .badges { display: flex; align-items: center; }
+  header.top .badge-logo {
+    width: 46px; height: 46px; border-radius: 50%; flex: none; object-fit: cover;
+    background: #fff; border: 1.5px solid rgba(255,255,255,0.7); box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  }
+  header.top h1 { font-size: 19px; margin: 0 0 3px; font-weight: 700; letter-spacing: 0.1px; }
+  header.top .sub { color: rgba(255,255,255,0.78); font-size: 12.5px; margin: 0; }
+  header.top .top-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  header.top .sync-info { text-align: right; font-size: 11.5px; color: rgba(255,255,255,0.85); line-height: 1.5; }
+  header.top .sync-info .freshness-inline { display: inline-flex; align-items: center; gap: 6px; }
+  header.top .sync-info .dot { width: 7px; height: 7px; border-radius: 50%; background: #57e39b; flex: none; }
+  header.top .sync-info.stale .dot { background: var(--warning); }
+  .top-actions { display: flex; gap: 8px; }
+  button.chip-btn {
+    font: inherit; font-size: 12.5px; padding: 8px 13px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; font-weight: 500;
+  }
+  button.chip-btn:hover { background: rgba(255,255,255,0.22); }
+  select.chip-select {
+    font: inherit; font-size: 13px; padding: 7px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary); cursor: pointer;
+  }
+
+  .config-banner {
+    background: color-mix(in srgb, var(--warning) 14%, var(--surface-1));
+    border: 1px solid color-mix(in srgb, var(--warning) 40%, var(--border));
+    border-radius: 10px; padding: 12px 14px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px;
+  }
+  .config-banner code { background: var(--page-plane); padding: 1px 5px; border-radius: 4px; }
+
+  .filterbar {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius);
+    padding: 14px 16px; margin-bottom: 18px;
+  }
+  .breadcrumb { font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+  .breadcrumb .crumb { cursor: pointer; color: var(--brand-600); font-weight: 500; }
+  .breadcrumb .crumb.current { color: var(--text-primary); font-weight: 700; cursor: default; }
+  .breadcrumb .sep { color: var(--text-muted); margin: 0 2px; }
+
+  .filter-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
+  .filter-field { display: flex; flex-direction: column; gap: 4px; }
+  .filter-field label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+  .filter-field select { min-width: 150px; }
+  .filter-row .spacer { flex: 1; }
+  .reset-btn {
+    font: inherit; font-size: 12.5px; padding: 7px 12px; border-radius: 8px; cursor: pointer; font-weight: 500;
+    border: 1px solid var(--border); background: var(--page-plane); color: var(--text-secondary);
+  }
+  .reset-btn:hover { background: var(--brand-tint); color: var(--brand-800); }
+
+  .multiselect { position: relative; }
+  .multiselect .ms-btn {
+    font: inherit; font-size: 13px; padding: 7px 10px; border-radius: 8px; min-width: 150px; text-align: left;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary); cursor: pointer;
+  }
+  .multiselect .ms-panel {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 20; min-width: 190px;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  .multiselect.open .ms-panel { display: block; }
+  .ms-panel .ms-actions { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 6px; }
+  .ms-panel .ms-actions a { color: var(--brand-600); cursor: pointer; }
+  .ms-panel label { display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 3px 2px; cursor: pointer; }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 760px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+  .kpi {
+    background: var(--surface-1); border: 1px solid var(--border); border-left: 4px solid var(--scope);
+    border-radius: var(--card-radius); padding: 14px 16px;
+  }
+  .kpi:has(.value.good) { border-left-color: var(--good); }
+  .kpi:has(.value.warning) { border-left-color: var(--warning); }
+  .kpi:has(.value.critical) { border-left-color: var(--critical); }
+  .kpi .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); margin-bottom: 8px; }
+  .kpi .value { font-size: 28px; font-weight: 700; font-variant-numeric: proportional-nums; color: var(--text-primary); }
+  .kpi .value.good { color: var(--good); }
+  .kpi .value.warning { color: color-mix(in srgb, var(--warning) 70%, var(--text-primary)); }
+  .kpi .value.critical { color: var(--critical); }
+
+  section { margin-bottom: 24px; }
+  section > h2.section-title {
+    font-size: 15px; font-weight: 700; color: var(--brand-800); margin: 0 0 10px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--gridline); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  }
+  [data-theme="dark"] section > h2.section-title { color: var(--scope); }
+  section > h2.section-title .section-caption { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 16px 18px; }
+  .card > h2 { font-size: 14.5px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
+  .card .card-desc { font-size: 12px; color: var(--text-secondary); margin: 0 0 10px; }
+  .tech-note {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: var(--text-secondary);
+    background: var(--page-plane); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; display: inline-block;
+  }
+  .tech-note b { color: var(--text-primary); }
+  .card-head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .grid-2 { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--gridline); }
+  th { color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.drill-row { cursor: pointer; }
+  tr.drill-row:hover td { background: var(--brand-tint); }
+
+  .bar-cell { display: flex; align-items: center; gap: 8px; }
+  .bar-track { flex: 1; height: 9px; border-radius: 4px; background: var(--gridline); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-fill.good { background: var(--good); }
+  .bar-fill.warning { background: var(--warning); }
+  .bar-fill.critical { background: var(--critical); }
+  .bar-pct { width: 44px; text-align: right; font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--text-secondary); }
+
+  .status-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 9px; border-radius: 999px; font-weight: 600; }
+  .status-chip.good { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); }
+  .status-chip.warning { background: color-mix(in srgb, var(--warning) 22%, transparent); color: color-mix(in srgb, var(--warning) 65%, var(--text-primary)); }
+  .status-chip.critical { background: color-mix(in srgb, var(--critical) 15%, transparent); color: var(--critical); }
+  .status-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .chart-box { position: relative; height: 260px; }
+  .chart-fallback { color: var(--text-muted); font-size: 12.5px; }
+
+  .dq-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--gridline); font-size: 13px; }
+  .dq-item:last-child { border-bottom: none; }
+  .dq-item .icon { flex: none; width: 20px; text-align: center; }
+  .dq-item .icon.good { color: var(--good); }
+  .dq-item .icon.critical { color: var(--critical); }
+  .dq-item .body b { display: block; margin-bottom: 2px; }
+  .dq-item .body span { color: var(--text-secondary); }
+
+  .export-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .export-btn {
+    font: inherit; font-size: 13.5px; padding: 10px 18px; border-radius: 999px; border: none; cursor: pointer;
+    background: var(--brand-700); color: white; font-weight: 600; display: inline-flex; align-items: center; gap: 7px;
+  }
+  .export-btn:hover { background: var(--brand-600); }
+  .export-btn.secondary { background: var(--surface-1); color: var(--text-primary); border: 1px solid var(--border); }
+  .export-btn.secondary:hover { background: var(--brand-tint); }
+  .export-hint { font-size: 12px; color: var(--text-muted); }
+
+  footer.page { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--gridline); font-size: 11.5px; color: var(--text-muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+
+  @media print {
+    .top-actions, .config-banner, .filterbar .filter-row, .export-row { display: none; }
+    body { background: white; }
+    .card, .kpi { border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand-id">
+      <div class="badges">
+        <img class="badge-logo" src="data:image/webp;base64,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" alt="Ekiti State Government logo" title="Ekiti State — Land of Honour">
+      </div>
+      <div>
+        <h1>Ekiti State — RI Facility Weekly Vaccine Utilization</h1>
+        <p class="sub">Ekiti State Primary Health Care Development Agency · Routine Immunization M&amp;E · Supported by WHO</p>
+      </div>
+    </div>
+    <div class="top-right">
+      <div class="sync-info" id="freshnessBanner">
+        <div class="freshness-inline"><span class="dot"></span><span id="freshnessText">Checking data freshness…</span></div>
+        <div id="submissionsCount"></div>
+      </div>
+      <div class="top-actions">
+        <button class="chip-btn" id="refreshBtn" type="button">↻ Refresh</button>
+        <button class="chip-btn" id="themeToggle" type="button">◐ Theme</button>
+        <button class="chip-btn" id="printBtn" type="button">🖨 Print</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="config-banner" id="configBanner">
+    <b>One-time setup:</b> this page currently shows generated sample data. Open the <code>&lt;script&gt;</code>
+    block near the bottom of this file and set <code>DATA_SOURCE_URL</code> to an endpoint returning
+    <code>{ asOf, facilitiesMaster: [...], submissions: [...] }</code> (see the comment above
+    <code>DATA_SOURCE_URL</code> for the exact shape) to go live — point it at your Apps Script Web App proxy.
+  </div>
+
+  <div class="filterbar">
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <div class="filter-row">
+      <div class="filter-field">
+        <label for="lgaSelect">LGA</label>
+        <select id="lgaSelect" class="chip-select"></select>
+      </div>
+      <div class="filter-field">
+        <label for="wardSelect">Ward</label>
+        <select id="wardSelect" class="chip-select"><option value="">— select an LGA first —</option></select>
+      </div>
+      <div class="filter-field">
+        <label for="facilitySelect">Facility</label>
+        <select id="facilitySelect" class="chip-select"><option value="">— select a ward first —</option></select>
+      </div>
+      <div class="filter-field">
+        <label>Months</label>
+        <div class="multiselect" id="monthMs">
+          <button type="button" class="ms-btn" id="monthMsBtn">Months</button>
+          <div class="ms-panel" id="monthMsPanel"></div>
+        </div>
+      </div>
+      <div class="filter-field">
+        <label>Weeks</label>
+        <div class="multiselect" id="weekMs">
+          <button type="button" class="ms-btn" id="weekMsBtn">Weeks</button>
+          <div class="ms-panel" id="weekMsPanel"></div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <button class="reset-btn" id="resetFiltersBtn" type="button">Reset filters</button>
+    </div>
+  </div>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <section id="mainSection"></section>
+
+  <section>
+    <h2 class="section-title">Data quality &amp; coverage gaps<span class="section-caption">Selected scope &amp; period</span></h2>
+    <div class="grid-2">
+      <div class="card">
+        <h2 id="dqHeading">Data quality checks</h2>
+        <div id="dqList"></div>
+      </div>
+      <div class="card">
+        <h2 id="missingHeading">Not yet reported</h2>
+        <div id="missingList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="section-title">Export<span class="section-caption">Respects current scope &amp; period</span></h2>
+    <div class="card">
+      <div class="export-row">
+        <button class="export-btn" id="downloadExcelBtn" type="button">⬇ <span id="downloadExcelLabel">Download State Data (.xlsx)</span></button>
+        <button class="export-btn secondary" id="downloadChartsBtn" type="button">🖼 Download Charts (.zip)</button>
+        <span class="export-hint">Exports respect the current LGA / Ward / Facility selection and the selected Months / Weeks.</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="page">
+    <span id="reportGenerated">Report generated —</span>
+    <span>Data source: KoboToolbox — Facility Weekly Vaccine Utilization form (live sync)</span>
+  </footer>
+
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   DATA_SOURCE_URL should return JSON shaped as:
+   {
+     asOf: "2026-08-20T10:04:00Z",
+     facilitiesMaster: [ { lga, ward, facility }, ... ],
+     submissions: [
+       { id, tsISO, lga, ward, facility, month, week,
+         antigens: { BOPV: {opening, received, utilized}, BCG: {...}, ... } }, ...
+     ]
+   }
+   ============================================================ */
+const DATA_SOURCE_URL = 'https://script.google.com/macros/s/AKfycbygfy7Ti2dl4viMlTwZ_ZpM3TH-vFrioQ6Sk_fdeoij1-XbZ1GkxMqNNmKS_fmdPkuD/exec';
+
+const ANTIGENS = ['BOPV','BCG','HepB','PENTA','PCV','MCV','MR','YELLOW FEVER','MEN A','IPV','ROTA','HPV','Td'];
+const MONTH_ORDER = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const WEEK_ORDER = ['Week 1','Week 2','Week 3','Week 4','Week 5'];
+
+function generateSampleData() {
+  const LGAS = [
+    { name: 'Ado-Ekiti', wards: ['Agoaduloju', 'Basiri', 'Odo Ado'] },
+    { name: 'Efon', wards: ['Alajo/Surulere', 'Alanaka', 'Erekesan'] },
+    { name: 'Ijero', wards: ['Ijero A', 'Ijero B', 'Ikoro'] },
+    { name: 'Gbonyin', wards: ['Agbado', 'Aisegba I', 'Ijan'] }
+  ];
+  const facilitiesMaster = [];
+  LGAS.forEach(lga => lga.wards.forEach(ward => {
+    for (let i = 1; i <= 4; i++) facilitiesMaster.push({ lga: lga.name, ward, facility: `${ward} HC ${i}` });
+  }));
+
+  const MONTHS = ['June', 'July', 'August'];
+  const submissions = [];
+  let id = 1;
+  MONTHS.forEach(month => {
+    WEEK_ORDER.forEach((week, wi) => {
+      const completeness = month === 'August'
+        ? [0.78, 0.7, 0.22, 0, 0][wi]
+        : 0.55 + Math.random() * 0.3;
+      facilitiesMaster.forEach(f => {
+        if (Math.random() < completeness) {
+          const antigens = {};
+          ANTIGENS.forEach(a => {
+            const opening = Math.floor(Math.random() * 30) * 5;
+            const received = Math.floor(Math.random() * 15) * 5;
+            const utilized = Math.round((opening + received) * (0.2 + Math.random() * 0.3));
+            antigens[a] = { opening, received, utilized };
+          });
+          submissions.push({
+            id: id++,
+            tsISO: new Date(2026, MONTH_ORDER.indexOf(month), 1 + wi * 6).toISOString(),
+            lga: f.lga, ward: f.ward, facility: f.facility, month, week, antigens
+          });
+        }
+      });
+    });
+  });
+
+  return { asOf: null, facilitiesMaster, submissions };
+}
+
+let RAW = null;
+let usingSample = true;
+let chartInstances = {};
+
+const selection = { lga: '', ward: '', facility: '', months: new Set(), weeks: new Set() };
+
+async function loadData() {
+  if (DATA_SOURCE_URL) {
+    try {
+      const resp = await fetch(DATA_SOURCE_URL);
+      if (!resp.ok) throw new Error('bad response');
+      const data = await resp.json();
+      usingSample = false;
+      document.getElementById('configBanner').style.display = 'none';
+      return data;
+    } catch (e) {
+      console.warn('Falling back to sample data:', e);
+    }
+  }
+  usingSample = true;
+  return generateSampleData();
+}
+
+function monthsPresent(raw) {
+  const set = new Set(raw.submissions.map(s => s.month));
+  return MONTH_ORDER.filter(m => set.has(m));
+}
+function weeksPresent(raw) { return WEEK_ORDER.slice(); }
+
+function periodFilter(subs) {
+  return subs.filter(s => selection.months.has(s.month) && selection.weeks.has(s.week));
+}
+
+function scopeKey(f) { return `${f.lga}|||${f.ward}|||${f.facility}`; }
+
+function scopedFacilities(raw, lga, ward) {
+  return raw.facilitiesMaster.filter(f => (!lga || f.lga === lga) && (!ward || f.ward === ward));
+}
+function scopedSubs(subs, lga, ward, facility) {
+  return subs.filter(s => (!lga || s.lga === lga) && (!ward || s.ward === ward) && (!facility || s.facility === facility));
+}
+
+function groupReportingRate(raw, periodSubs, lga, ward, groupField) {
+  const facilities = scopedFacilities(raw, lga, ward);
+  const groups = {};
+  facilities.forEach(f => {
+    const key = f[groupField];
+    if (!groups[key]) groups[key] = { name: key, expected: 0, submitted: new Set() };
+    groups[key].expected++;
+  });
+  scopedSubs(periodSubs, lga, ward, null).forEach(s => {
+    const key = s[groupField];
+    if (groups[key]) groups[key].submitted.add(scopeKey(s));
+  });
+  return Object.values(groups).map(g => ({ name: g.name, expected: g.expected, submitted: g.submitted.size }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function aggregateAntigens(subs) {
+  return ANTIGENS.map(a => {
+    let opening = 0, received = 0, utilized = 0;
+    subs.forEach(s => { const v = s.antigens[a]; if (v) { opening += v.opening; received += v.received; utilized += v.utilized; } });
+    const available = opening + received;
+    return { name: a, opening, received, utilized, available, rate: available ? (utilized / available * 100) : 0 };
+  });
+}
+
+function computeTrend(raw, lga, ward) {
+  const periods = [];
+  MONTH_ORDER.forEach(m => { if (selection.months.has(m)) WEEK_ORDER.forEach(w => { if (selection.weeks.has(w)) periods.push({ month: m, week: w }); }); });
+  const expected = scopedFacilities(raw, lga, ward).length;
+  return periods.map(p => {
+    const subs = raw.submissions.filter(s => s.month === p.month && s.week === p.week && (!lga || s.lga === lga) && (!ward || s.ward === ward));
+    const unique = new Set(subs.map(scopeKey));
+    return { label: `${p.month.slice(0, 3)} ${p.week.replace('Week ', 'W')}`, reported: unique.size, expected, rate: expected ? (unique.size / expected * 100) : 0 };
+  });
+}
+
+function statusFor(rate) { return rate >= 80 ? 'good' : rate >= 50 ? 'warning' : 'critical'; }
+function fmtPct(n) { return `${n.toFixed(1)}%`; }
+
+function renderBreadcrumb() {
+  const parts = [{ label: 'State', level: 'state' }];
+  if (selection.lga) parts.push({ label: selection.lga, level: 'lga' });
+  if (selection.ward) parts.push({ label: selection.ward, level: 'ward' });
+  if (selection.facility) parts.push({ label: selection.facility, level: 'facility' });
+  const el = document.getElementById('breadcrumb');
+  el.innerHTML = parts.map((p, i) => {
+    const isLast = i === parts.length - 1;
+    return `${i > 0 ? '<span class="sep">/</span>' : ''}<span class="crumb ${isLast ? 'current' : ''}" data-level="${p.level}">${p.label}</span>`;
+  }).join('');
+  el.querySelectorAll('.crumb:not(.current)').forEach(c => {
+    c.addEventListener('click', () => {
+      const level = c.dataset.level;
+      if (level === 'state') { selection.lga = ''; selection.ward = ''; selection.facility = ''; }
+      else if (level === 'lga') { selection.ward = ''; selection.facility = ''; }
+      else if (level === 'ward') { selection.facility = ''; }
+      syncSelectsFromSelection();
+      render();
+    });
+  });
+}
+
+function populateLgaSelect(raw) {
+  const lgaSel = document.getElementById('lgaSelect');
+  const lgas = [...new Set(raw.facilitiesMaster.map(f => f.lga))].sort();
+  lgaSel.innerHTML = `<option value="">All LGAs (State)</option>` + lgas.map(l => `<option value="${l}">${l}</option>`).join('');
+}
+function populateWardSelect(raw) {
+  const wardSel = document.getElementById('wardSelect');
+  if (!selection.lga) { wardSel.innerHTML = `<option value="">— select an LGA first —</option>`; wardSel.disabled = true; return; }
+  wardSel.disabled = false;
+  const wards = [...new Set(raw.facilitiesMaster.filter(f => f.lga === selection.lga).map(f => f.ward))].sort();
+  wardSel.innerHTML = `<option value="">All Wards</option>` + wards.map(w => `<option value="${w}">${w}</option>`).join('');
+}
+function populateFacilitySelect(raw) {
+  const facSel = document.getElementById('facilitySelect');
+  if (!selection.lga || !selection.ward) { facSel.innerHTML = `<option value="">— select a ward first —</option>`; facSel.disabled = true; return; }
+  facSel.disabled = false;
+  const facs = raw.facilitiesMaster.filter(f => f.lga === selection.lga && f.ward === selection.ward).map(f => f.facility).sort();
+  facSel.innerHTML = `<option value="">All Facilities</option>` + facs.map(f => `<option value="${f}">${f}</option>`).join('');
+}
+function syncSelectsFromSelection() {
+  populateWardSelect(RAW); populateFacilitySelect(RAW);
+  document.getElementById('lgaSelect').value = selection.lga;
+  document.getElementById('wardSelect').value = selection.ward;
+  document.getElementById('facilitySelect').value = selection.facility;
+}
+
+function buildMultiselect(panelId, btnId, options, selectedSet, labelPrefix) {
+  const panel = document.getElementById(panelId);
+  panel.innerHTML = `
+    <div class="ms-actions"><a data-act="all">Select all</a><a data-act="none">Clear</a></div>
+    ${options.map(o => `<label><input type="checkbox" value="${o}" ${selectedSet.has(o) ? 'checked' : ''}> ${o}</label>`).join('')}`;
+  panel.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) selectedSet.add(cb.value); else selectedSet.delete(cb.value);
+      updateMsButtonLabel(btnId, options, selectedSet, labelPrefix);
+      render();
+    });
+  });
+  panel.querySelector('[data-act="all"]').addEventListener('click', () => {
+    options.forEach(o => selectedSet.add(o));
+    buildMultiselect(panelId, btnId, options, selectedSet, labelPrefix);
+    updateMsButtonLabel(btnId, options, selectedSet, labelPrefix); render();
+  });
+  panel.querySelector('[data-act="none"]').addEventListener('click', () => {
+    selectedSet.clear();
+    buildMultiselect(panelId, btnId, options, selectedSet, labelPrefix);
+    updateMsButtonLabel(btnId, options, selectedSet, labelPrefix); render();
+  });
+  updateMsButtonLabel(btnId, options, selectedSet, labelPrefix);
+}
+function updateMsButtonLabel(btnId, options, selectedSet, labelPrefix) {
+  const btn = document.getElementById(btnId);
+  if (selectedSet.size === 0) btn.textContent = `${labelPrefix}: none`;
+  else if (selectedSet.size === options.length) btn.textContent = `${labelPrefix}: All`;
+  else if (selectedSet.size === 1) btn.textContent = `${labelPrefix}: ${[...selectedSet][0]}`;
+  else btn.textContent = `${labelPrefix}: ${selectedSet.size} selected`;
+}
+document.addEventListener('click', (e) => {
+  document.querySelectorAll('.multiselect').forEach(ms => {
+    if (!ms.contains(e.target)) ms.classList.remove('open');
+  });
+});
+document.getElementById('monthMsBtn').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('monthMs').classList.toggle('open'); });
+document.getElementById('weekMsBtn').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('weekMs').classList.toggle('open'); });
+
+document.getElementById('lgaSelect').addEventListener('change', (e) => {
+  selection.lga = e.target.value; selection.ward = ''; selection.facility = '';
+  populateWardSelect(RAW); populateFacilitySelect(RAW); render();
+});
+document.getElementById('wardSelect').addEventListener('change', (e) => {
+  selection.ward = e.target.value; selection.facility = '';
+  populateFacilitySelect(RAW); render();
+});
+document.getElementById('facilitySelect').addEventListener('change', (e) => {
+  selection.facility = e.target.value; render();
+});
+
+function renderFreshness(raw) {
+  const el = document.getElementById('freshnessBanner');
+  const text = document.getElementById('freshnessText');
+  if (usingSample || !raw.asOf) {
+    el.classList.add('stale');
+    text.textContent = 'Sample data — connect DATA_SOURCE_URL for live sync status.';
+    const countEl = document.getElementById('submissionsCount');
+    if (countEl) countEl.textContent = `Submissions loaded: ${raw.submissions.length.toLocaleString()}`;
+    return;
+  }
+  const ageMin = Math.round((Date.now() - new Date(raw.asOf).getTime()) / 60000);
+  const stale = ageMin > 180;
+  el.classList.toggle('stale', stale);
+  text.textContent = stale
+    ? `Last synced ${ageMin} minutes ago — sync may be stalled.`
+    : `Last synced ${ageMin} minute${ageMin === 1 ? '' : 's'} ago.`;
+  const countEl = document.getElementById('submissionsCount');
+  if (countEl) countEl.textContent = `Submissions loaded: ${raw.submissions.length.toLocaleString()}`;
+}
+
+function currentScopeLevel() {
+  if (selection.facility) return 'facility';
+  if (selection.ward) return 'ward';
+  if (selection.lga) return 'lga';
+  return 'state';
+}
+function currentScopeLabel() {
+  const level = currentScopeLevel();
+  if (level === 'facility') return selection.facility;
+  if (level === 'ward') return `${selection.lga} — ${selection.ward}`;
+  if (level === 'lga') return selection.lga;
+  return 'State';
+}
+
+function renderKpis(periodSubs) {
+  const level = currentScopeLevel();
+  const expected = scopedFacilities(RAW, selection.lga || null, selection.ward || null).length;
+  const scoped = scopedSubs(periodSubs, selection.lga || null, selection.ward || null, selection.facility || null);
+  const uniqueReported = new Set(scoped.map(scopeKey)).size;
+  const rate = expected ? (uniqueReported / expected * 100) : 0;
+
+  let items;
+  if (level === 'facility') {
+    items = [
+      { label: 'Submissions in selected period', value: scoped.length, cls: scoped.length ? 'good' : 'critical' },
+      { label: 'Weeks covered', value: `${new Set(scoped.map(s => s.month + s.week)).size} / ${selection.months.size * selection.weeks.size}`, cls: '' },
+      { label: 'Total doses utilized (all antigens)', value: aggregateAntigens(scoped).reduce((a, x) => a + x.utilized, 0), cls: '' },
+      { label: 'Avg utilization rate', value: fmtPct(aggregateAntigens(scoped).reduce((a, x) => a + x.rate, 0) / ANTIGENS.length), cls: '' }
+    ];
+  } else {
+    items = [
+      { label: `Facilities expected — ${currentScopeLabel()}`, value: expected, cls: '' },
+      { label: 'Facilities reported (selected period)', value: uniqueReported, cls: uniqueReported ? 'good' : 'critical' },
+      { label: 'Reporting rate (selected period)', value: fmtPct(rate), cls: statusFor(rate) },
+      { label: 'Missing', value: expected - uniqueReported, cls: (expected - uniqueReported) ? 'warning' : 'good' }
+    ];
+  }
+  document.getElementById('kpiRow').innerHTML = items.map(i => `
+    <div class="kpi"><div class="label">${i.label}</div><div class="value ${i.cls}">${i.value}</div></div>`).join('');
+}
+
+function chartTextColor() { return getComputedStyle(document.body).getPropertyValue('--text-secondary').trim(); }
+function chartGridColor() { return getComputedStyle(document.body).getPropertyValue('--gridline').trim(); }
+function seriesColor() { return getComputedStyle(document.body).getPropertyValue('--series-1').trim(); }
+
+function destroyChart(key) { if (chartInstances[key]) { chartInstances[key].destroy(); delete chartInstances[key]; } }
+
+function renderLineOrBarChart(canvasId, key, type, labels, values, tooltipFmt, indexAxis) {
+  const ctx = document.getElementById(canvasId);
+  const fallbackHost = ctx.parentElement;
+  let fb = fallbackHost.querySelector('.chart-fallback');
+  if (typeof Chart === 'undefined') {
+    ctx.style.display = 'none';
+    if (!fb) { fb = document.createElement('p'); fb.className = 'chart-fallback'; fallbackHost.appendChild(fb); }
+    fb.textContent = 'Chart library failed to load. ' + labels.map((l, i) => `${l}: ${values[i].toFixed(1)}`).join(', ');
+    return;
+  }
+  ctx.style.display = 'block';
+  if (fb) fb.remove();
+  destroyChart(key);
+  chartInstances[key] = new Chart(ctx, {
+    type,
+    data: { labels, datasets: [{ label: 'value', data: values, borderColor: seriesColor(), backgroundColor: seriesColor(), borderWidth: 2, pointRadius: type === 'line' ? 4 : 0, tension: 0.25, fill: false, borderRadius: 4, barThickness: type === 'bar' && indexAxis === 'y' ? 16 : undefined }] },
+    options: {
+      indexAxis: indexAxis || 'x', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => tooltipFmt(c.dataIndex) } } },
+      scales: {
+        [indexAxis === 'y' ? 'x' : 'y']: { beginAtZero: true, ticks: { color: chartTextColor(), callback: v => v + '%' }, grid: { color: chartGridColor() } },
+        [indexAxis === 'y' ? 'y' : 'x']: { ticks: { color: chartTextColor() }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderTable(rows, level) {
+  const headLabel = level === 'lga' ? 'LGA' : level === 'ward' ? 'Ward' : 'Facility';
+  const body = rows.map(r => {
+    const rate = r.expected ? (r.submitted / r.expected * 100) : 0;
+    const status = statusFor(rate);
+    return `
+      <tr class="drill-row" data-name="${r.name}">
+        <td>${r.name}</td>
+        <td class="num">${r.expected}</td>
+        <td class="num">${r.submitted}</td>
+        <td><div class="bar-cell"><div class="bar-track"><div class="bar-fill ${status}" style="width:${Math.min(rate,100)}%"></div></div><div class="bar-pct">${fmtPct(rate)}</div></div></td>
+        <td><span class="status-chip ${status}"><span class="dot"></span>${status === 'good' ? 'On track' : status === 'warning' ? 'Watch' : 'Critical'}</span></td>
+      </tr>`;
+  }).join('');
+  return `
+    <table>
+      <thead><tr><th>${headLabel}</th><th class="num">Expected</th><th class="num">Submitted</th><th>Reporting rate</th><th>Status</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
+function attachDrillHandlers(container, level) {
+  container.querySelectorAll('tr.drill-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const name = row.dataset.name;
+      if (level === 'lga') { selection.lga = name; selection.ward = ''; selection.facility = ''; populateWardSelect(RAW); populateFacilitySelect(RAW); }
+      else if (level === 'ward') { selection.ward = name; selection.facility = ''; populateFacilitySelect(RAW); }
+      else if (level === 'facility') { selection.facility = name; }
+      syncSelectsFromSelection();
+      render();
+    });
+  });
+}
+
+function renderMain(periodSubs) {
+  const level = currentScopeLevel();
+  const main = document.getElementById('mainSection');
+
+  if (level === 'facility') {
+    const facSubs = scopedSubs(periodSubs, selection.lga, selection.ward, selection.facility).sort((a, b) => a.tsISO.localeCompare(b.tsISO));
+    const periodsCovered = new Set(facSubs.map(s => s.month + '|' + s.week));
+    const allPeriods = [];
+    MONTH_ORDER.forEach(m => { if (selection.months.has(m)) WEEK_ORDER.forEach(w => { if (selection.weeks.has(w)) allPeriods.push(m + '|' + w); }); });
+
+    main.innerHTML = `
+      <h2 class="section-title">Facility detail — ${selection.facility}<span class="section-caption">Submission history &amp; utilization</span></h2>
+      <div class="card" style="margin-bottom:16px;">
+        <h2>Submission history</h2>
+        <p class="card-desc">One row per Month / Week expected for this facility in the selected period.</p>
+        <table>
+          <thead><tr><th>Month</th><th>Week</th><th>Status</th><th class="num">Total doses utilized</th></tr></thead>
+          <tbody>
+            ${allPeriods.map(p => {
+              const [m, w] = p.split('|');
+              const sub = facSubs.find(s => s.month === m && s.week === w);
+              const utilized = sub ? Object.values(sub.antigens).reduce((a, x) => a + x.utilized, 0) : 0;
+              return `<tr><td>${m}</td><td>${w}</td><td>${sub ? '<span class="status-chip good"><span class="dot"></span>Submitted</span>' : '<span class="status-chip critical"><span class="dot"></span>Not submitted</span>'}</td><td class="num">${utilized}</td></tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-head-row">
+          <div>
+            <h2>Antigen utilization — selected period</h2>
+            <p class="card-desc">Utilized as a share of available stock (opening + received), by antigen.</p>
+          </div>
+        </div>
+        <div class="tech-note">Uses: <b>Opening / Received / Utilized</b> fields per antigen, summed across the selected Months / Weeks</div>
+        <div class="chart-box" style="height:320px;"><canvas id="antigenChart"></canvas></div>
+      </div>`;
+    const ag = aggregateAntigens(facSubs).sort((a, b) => b.rate - a.rate);
+    renderLineOrBarChart('antigenChart', 'antigen', 'bar', ag.map(a => a.name), ag.map(a => a.rate), (i) => `${ag[i].rate.toFixed(1)}% utilized (${ag[i].utilized} doses)`, 'y');
+    return;
+  }
+
+  const drillLevel = level === 'state' ? 'lga' : level === 'lga' ? 'ward' : 'facility';
+  const groupField = drillLevel;
+  const rows = groupReportingRate(RAW, periodSubs, selection.lga || null, selection.ward || null, groupField);
+  const scoped = scopedSubs(periodSubs, selection.lga || null, selection.ward || null, null);
+  const trend = computeTrend(RAW, selection.lga || null, selection.ward || null);
+  const ag = aggregateAntigens(scoped).sort((a, b) => b.rate - a.rate);
+
+  const drillNoun = drillLevel === 'lga' ? 'LGA' : drillLevel === 'ward' ? 'Ward' : 'Facility';
+  main.innerHTML = `
+    <h2 class="section-title">Reporting coverage — ${currentScopeLabel()}<span class="section-caption">Click a row to drill in</span></h2>
+    <div class="grid-2">
+      <div class="card">
+        <h2>Reporting rate by ${drillNoun}</h2>
+        <p class="card-desc">Facilities that submitted at least once in the selected period, vs. facilities expected.</p>
+        <div class="tech-note">Uses: <b>LGA / Ward / Facility</b> fields, matched against Master_Facilities for this scope</div>
+        <div id="drillTable"></div>
+      </div>
+      <div class="card">
+        <h2>Reporting rate trend</h2>
+        <p class="card-desc">Reporting rate for ${currentScopeLabel()} across the selected Months / Weeks.</p>
+        <div class="chart-box"><canvas id="trendChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <div class="card-head-row">
+        <div>
+          <h2>Antigen utilization — ${currentScopeLabel()}</h2>
+          <p class="card-desc">Utilized as a share of available stock (opening + received), by antigen, selected period.</p>
+        </div>
+      </div>
+      <div class="tech-note">Uses: <b>Opening / Received / Utilized</b> fields per antigen, summed across matching submissions</div>
+      <div class="chart-box" style="height:320px;"><canvas id="antigenChart"></canvas></div>
+    </div>`;
+
+  const tableHost = document.getElementById('drillTable');
+  tableHost.innerHTML = renderTable(rows, drillLevel);
+  attachDrillHandlers(tableHost, drillLevel);
+
+  renderLineOrBarChart('trendChart', 'trend', 'line', trend.map(t => t.label), trend.map(t => t.rate), (i) => `${trend[i].reported}/${trend[i].expected} · ${trend[i].rate.toFixed(1)}%`, 'x');
+  renderLineOrBarChart('antigenChart', 'antigen', 'bar', ag.map(a => a.name), ag.map(a => a.rate), (i) => `${ag[i].rate.toFixed(1)}% utilized (${ag[i].utilized} doses)`, 'y');
+}
+
+function renderDataQuality(periodSubs) {
+  const scoped = scopedSubs(periodSubs, selection.lga || null, selection.ward || null, selection.facility || null);
+  document.getElementById('dqHeading').textContent = `Data quality checks — ${currentScopeLabel()}`;
+  const counts = {};
+  scoped.forEach(s => { const k = scopeKey(s) + '|' + s.month + s.week; counts[k] = (counts[k] || 0) + 1; });
+  const dupes = Object.entries(counts).filter(([, c]) => c > 1);
+  const stockAnomalies = aggregateAntigens(scoped).filter(a => a.utilized > a.available);
+  const items = [
+    { icon: dupes.length ? '⚠' : '✓', cls: dupes.length ? 'critical' : 'good', title: dupes.length ? `${dupes.length} possible duplicate submission(s)` : 'No duplicate submissions detected', body: dupes.length ? 'Same facility submitted more than once for the same week.' : 'for the selected period.' },
+    { icon: stockAnomalies.length ? '⚠' : '✓', cls: stockAnomalies.length ? 'critical' : 'good', title: stockAnomalies.length ? `${stockAnomalies.length} antigen stock anomaly(ies)` : 'No stock anomalies detected', body: stockAnomalies.length ? stockAnomalies.map(a => a.name).join(', ') + ' — utilized exceeds available.' : 'utilized never exceeds available for any antigen.' }
+  ];
+  document.getElementById('dqList').innerHTML = items.map(i => `<div class="dq-item"><div class="icon ${i.cls}">${i.icon}</div><div class="body"><b>${i.title}</b><span>${i.body}</span></div></div>`).join('');
+}
+
+function renderMissing(periodSubs) {
+  document.getElementById('missingHeading').textContent = `Not yet reported — ${currentScopeLabel()}`;
+  const level = currentScopeLevel();
+  const el = document.getElementById('missingList');
+  if (level === 'facility') {
+    el.innerHTML = '<p style="color:var(--text-muted); font-size:13px;">Single-facility view — see submission history above.</p>';
+    return;
+  }
+  const drillLevel = level === 'state' ? 'lga' : level === 'lga' ? 'ward' : 'facility';
+  const rows = groupReportingRate(RAW, periodSubs, selection.lga || null, selection.ward || null, drillLevel);
+  const missing = rows.filter(r => r.submitted < r.expected);
+  if (!missing.length) { el.innerHTML = '<p style="color:var(--text-muted); font-size:13px;">Everything expected has reported for this period.</p>'; return; }
+  el.innerHTML = `<ul style="margin:0; padding-left:18px; font-size:13px; color:var(--text-secondary);">` +
+    missing.map(r => `<li>${r.name} — ${r.expected - r.submitted} of ${r.expected} not yet reported</li>`).join('') + `</ul>`;
+}
+
+function rowsToSheetData(subs) {
+  return subs.map(s => {
+    const row = { Month: s.month, Week: s.week, LGA: s.lga, Ward: s.ward, Facility: s.facility, Timestamp: s.tsISO };
+    ANTIGENS.forEach(a => {
+      const v = s.antigens[a] || { opening: 0, received: 0, utilized: 0 };
+      row[`${a} Opening`] = v.opening; row[`${a} Received`] = v.received; row[`${a} Utilized`] = v.utilized;
+    });
+    return row;
+  });
+}
+
+function updateExportLabel() {
+  const level = currentScopeLevel();
+  const label = level === 'state' ? 'Download State Data (.xlsx)'
+    : level === 'lga' ? `Download ${selection.lga} Data (.xlsx)`
+    : level === 'ward' ? `Download ${selection.lga} — ${selection.ward} Data (.xlsx)`
+    : `Download ${selection.facility} Data (.xlsx)`;
+  document.getElementById('downloadExcelLabel').textContent = label;
+}
+
+function downloadExcel() {
+  if (typeof XLSX === 'undefined') { alert('The Excel export library failed to load (offline or blocked CDN). Try again with an internet connection.'); return; }
+  const periodSubs = periodFilter(RAW.submissions);
+  const level = currentScopeLevel();
+  const scoped = scopedSubs(periodSubs, selection.lga || null, selection.ward || null, selection.facility || null);
+  const wb = XLSX.utils.book_new();
+
+  const drillLevel = level === 'state' ? 'lga' : level === 'lga' ? 'ward' : level === 'ward' ? 'facility' : null;
+  if (drillLevel) {
+    const rows = groupReportingRate(RAW, periodSubs, selection.lga || null, selection.ward || null, drillLevel);
+    const summarySheet = rows.map(r => ({ [drillLevel === 'lga' ? 'LGA' : drillLevel === 'ward' ? 'Ward' : 'Facility']: r.name, Expected: r.expected, Submitted: r.submitted, Missing: r.expected - r.submitted, 'Reporting Rate %': r.expected ? +(r.submitted / r.expected * 100).toFixed(1) : 0 }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summarySheet), 'Summary');
+  }
+
+  const ag = aggregateAntigens(scoped);
+  const agSheet = ag.map(a => ({ Antigen: a.name, 'Total Opening': a.opening, 'Total Received': a.received, 'Total Utilized': a.utilized, Available: a.available, 'Utilization Rate %': +a.rate.toFixed(1), Flag: a.utilized > a.available ? 'ANOMALY' : 'OK' }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(agSheet), 'Antigen_Utilization');
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rowsToSheetData(scoped)), 'Raw_Submissions');
+
+  const scopeLabel = currentScopeLabel().replace(/[^a-z0-9]+/gi, '_');
+  XLSX.writeFile(wb, `Ekiti_RI_${scopeLabel}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+async function downloadCharts() {
+  const canvases = [...document.querySelectorAll('canvas')].filter(c => c.style.display !== 'none');
+  if (!canvases.length) { alert('No charts currently rendered to export.'); return; }
+  if (typeof JSZip === 'undefined') {
+    canvases.forEach(c => { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = `${c.id}.png`; a.click(); });
+    return;
+  }
+  const zip = new JSZip();
+  canvases.forEach(c => { const dataUrl = c.toDataURL('image/png'); zip.file(`${c.id}.png`, dataUrl.split(',')[1], { base64: true }); });
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Ekiti_RI_Charts_${currentScopeLabel().replace(/[^a-z0-9]+/gi, '_')}.zip`;
+  a.click();
+}
+
+document.getElementById('downloadExcelBtn').addEventListener('click', downloadExcel);
+document.getElementById('downloadChartsBtn').addEventListener('click', downloadCharts);
+
+function render() {
+  renderBreadcrumb();
+  const periodSubs = periodFilter(RAW.submissions);
+  renderKpis(periodSubs);
+  renderMain(periodSubs);
+  renderDataQuality(periodSubs);
+  renderMissing(periodSubs);
+  updateExportLabel();
+}
+
+async function init() {
+  RAW = await loadData();
+  renderFreshness(RAW);
+  populateLgaSelect(RAW);
+  populateWardSelect(RAW);
+  populateFacilitySelect(RAW);
+
+  const months = monthsPresent(RAW);
+  const weeks = weeksPresent(RAW);
+  const defaultMonth = months[months.length - 1] || MONTH_ORDER[0];
+  selection.months = new Set([defaultMonth]);
+  selection.weeks = new Set(weeks);
+  buildMultiselect('monthMsPanel', 'monthMsBtn', months, selection.months, 'Months');
+  buildMultiselect('weekMsPanel', 'weekMsBtn', weeks, selection.weeks, 'Weeks');
+
+  document.getElementById('reportGenerated').textContent = `Report generated: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+  render();
+}
+
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  render();
+});
+
+async function refreshData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true; btn.textContent = '↻ Refreshing…';
+  RAW = await loadData();
+  renderFreshness(RAW);
+  populateLgaSelect(RAW); syncSelectsFromSelection();
+  render();
+  btn.disabled = false; btn.textContent = '↻ Refresh';
+}
+document.getElementById('refreshBtn').addEventListener('click', refreshData);
+
+document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+  selection.lga = ''; selection.ward = ''; selection.facility = '';
+  const months = monthsPresent(RAW), weeks = weeksPresent(RAW);
+  selection.months = new Set(months);
+  selection.weeks = new Set(weeks);
+  populateLgaSelect(RAW); syncSelectsFromSelection();
+  buildMultiselect('monthMsPanel', 'monthMsBtn', months, selection.months, 'Months');
+  buildMultiselect('weekMsPanel', 'weekMsBtn', weeks, selection.weeks, 'Weeks');
+  render();
+});
+
+init();
+</script>
+</body>
+</html>
