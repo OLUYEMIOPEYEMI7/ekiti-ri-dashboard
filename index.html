@@ -4,9 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ekiti State RI — Facility Weekly Vaccine Utilization</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+(function() {
+  function loadScript(url) {
+    return new Promise(function(resolve, reject) {
+      var s = document.createElement("script");
+      s.src = url;
+      s.onload = function() { resolve(true); };
+      s.onerror = function() { reject(new Error("failed to load " + url)); };
+      document.head.appendChild(s);
+    });
+  }
+  function loadWithFallback(urls) {
+    var p = Promise.reject();
+    urls.forEach(function(url) {
+      p = p.catch(function() { return loadScript(url); });
+    });
+    return p.catch(function() { return false; });
+  }
+  window.__loadLibraries = function() {
+    return Promise.all([
+      loadWithFallback([
+        "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js",
+        "https://unpkg.com/chart.js@4.4.4/dist/chart.umd.js"
+      ]),
+      loadWithFallback([
+        "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
+        "https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"
+      ]),
+      loadWithFallback([
+        "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js",
+        "https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"
+      ])
+    ]);
+  };
+})();
+</script>
 
 <style>
   :root {
@@ -923,7 +956,7 @@ document.getElementById('resetFiltersBtn').addEventListener('click', () => {
   render();
 });
 
-init();
+window.__loadLibraries().then(init);
 </script>
 </body>
 </html>
