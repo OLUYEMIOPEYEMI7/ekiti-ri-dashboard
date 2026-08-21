@@ -51,20 +51,22 @@
     --text-muted:     #7c8a8e;
     --gridline:       #e1e0d9;
     --baseline:       #c3c2b7;
-    --border:         rgba(11,11,11,0.10);
+    --border:         rgba(11,11,11,0.16);
     --series-1:       #2a78d6;
     --good:           #0ca30c;
     --warning:        #fab219;
     --serious:        #ec835a;
     --critical:       #d03b3b;
-    --card-radius:    10px;
+    --card-radius:    6px;
+    --font-mono:      ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+    /* brand chrome — the masthead/buttons/active-nav teal; fixed across light & dark */
     --brand-900:      #0a4152;
     --brand-800:      #0d5266;
     --brand-700:      #10647c;
     --brand-600:      #137891;
     --brand-tint:     color-mix(in srgb, var(--brand-700) 10%, var(--surface-1));
     --brand-tint-strong: color-mix(in srgb, var(--brand-700) 16%, var(--surface-1));
-    --scope:          #137891;
+    --scope:          #137891; /* neutral "in scope" accent for KPI tiles without a status */
   }
   [data-theme="dark"] {
     color-scheme: dark;
@@ -75,7 +77,7 @@
     --text-muted:     #93a3a7;
     --gridline:       #2c2c2a;
     --baseline:       #383835;
-    --border:         rgba(255,255,255,0.10);
+    --border:         rgba(255,255,255,0.14);
     --series-1:       #3987e5;
     --good:           #0ca30c;
     --warning:        #fab219;
@@ -92,6 +94,7 @@
   }
   .wrap { max-width: 1280px; margin: 0 auto; padding: 0 16px 60px; }
 
+  /* ---------- Masthead ---------- */
   header.top {
     background: linear-gradient(100deg, var(--brand-900), var(--brand-700) 70%, var(--brand-600));
     color: #fff; margin: 0 0 18px; padding: 16px 16px;
@@ -125,10 +128,11 @@
   .config-banner {
     background: color-mix(in srgb, var(--warning) 14%, var(--surface-1));
     border: 1px solid color-mix(in srgb, var(--warning) 40%, var(--border));
-    border-radius: 10px; padding: 12px 14px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px;
+    border-radius: 6px; padding: 12px 14px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px;
   }
   .config-banner code { background: var(--page-plane); padding: 1px 5px; border-radius: 4px; }
 
+  /* ---------- Filter bar ---------- */
   .filterbar {
     background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius);
     padding: 14px 16px; margin-bottom: 18px;
@@ -164,17 +168,15 @@
   .ms-panel .ms-actions a { color: var(--brand-600); cursor: pointer; }
   .ms-panel label { display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 3px 2px; cursor: pointer; }
 
+  /* ---------- KPIs ---------- */
   .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
   @media (max-width: 760px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
   .kpi {
-    background: var(--surface-1); border: 1px solid var(--border); border-left: 4px solid var(--scope);
+    background: var(--surface-1); border: 1px solid var(--border);
     border-radius: var(--card-radius); padding: 14px 16px;
   }
-  .kpi:has(.value.good) { border-left-color: var(--good); }
-  .kpi:has(.value.warning) { border-left-color: var(--warning); }
-  .kpi:has(.value.critical) { border-left-color: var(--critical); }
   .kpi .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); margin-bottom: 8px; }
-  .kpi .value { font-size: 28px; font-weight: 700; font-variant-numeric: proportional-nums; color: var(--text-primary); }
+  .kpi .value { font-family: var(--font-mono); font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; color: var(--text-primary); }
   .kpi .value.good { color: var(--good); }
   .kpi .value.warning { color: color-mix(in srgb, var(--warning) 70%, var(--text-primary)); }
   .kpi .value.critical { color: var(--critical); }
@@ -185,12 +187,12 @@
     border-bottom: 1px solid var(--gridline); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap;
   }
   [data-theme="dark"] section > h2.section-title { color: var(--scope); }
-  section > h2.section-title .section-caption { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
+  section > h2.section-title .section-caption { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); }
   .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 16px 18px; }
   .card > h2 { font-size: 14.5px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
   .card .card-desc { font-size: 12px; color: var(--text-secondary); margin: 0 0 10px; }
   .tech-note {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: var(--text-secondary);
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);
     background: var(--page-plane); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; display: inline-block;
   }
   .tech-note b { color: var(--text-primary); }
@@ -202,6 +204,7 @@
   th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--gridline); }
   th { color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.num { font-family: var(--font-mono); }
   tr.drill-row { cursor: pointer; }
   tr.drill-row:hover td { background: var(--brand-tint); }
 
@@ -211,7 +214,7 @@
   .bar-fill.good { background: var(--good); }
   .bar-fill.warning { background: var(--warning); }
   .bar-fill.critical { background: var(--critical); }
-  .bar-pct { width: 44px; text-align: right; font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--text-secondary); }
+  .bar-pct { width: 48px; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; font-size: 12.5px; color: var(--text-secondary); }
 
   .status-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 9px; border-radius: 999px; font-weight: 600; }
   .status-chip.good { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); }
@@ -358,12 +361,14 @@
    DATA_SOURCE_URL should return JSON shaped as:
    {
      asOf: "2026-08-20T10:04:00Z",
-     facilitiesMaster: [ { lga, ward, facility }, ... ],
+     facilitiesMaster: [ { lga, ward, facility }, ... ],   // every EXPECTED facility, whether or not it has submitted
      submissions: [
        { id, tsISO, lga, ward, facility, month, week,
          antigens: { BOPV: {opening, received, utilized}, BCG: {...}, ... } }, ...
      ]
    }
+   Both facilitiesMaster and submissions use the resolved pretty LGA/Ward/Facility labels
+   (i.e. Raw_Submissions after Kobo_Sync_Script_v2.gs's label resolution), not raw Kobo codes.
    ============================================================ */
 const DATA_SOURCE_URL = 'https://script.google.com/macros/s/AKfycbygfy7Ti2dl4viMlTwZ_ZpM3TH-vFrioQ6Sk_fdeoij1-XbZ1GkxMqNNmKS_fmdPkuD/exec';
 
@@ -371,6 +376,7 @@ const ANTIGENS = ['BOPV','BCG','HepB','PENTA','PCV','MCV','MR','YELLOW FEVER','M
 const MONTH_ORDER = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const WEEK_ORDER = ['Week 1','Week 2','Week 3','Week 4','Week 5'];
 
+/* ---------------- Sample data generator (used until DATA_SOURCE_URL is wired up) ---------------- */
 function generateSampleData() {
   const LGAS = [
     { name: 'Ado-Ekiti', wards: ['Agoaduloju', 'Basiri', 'Odo Ado'] },
@@ -413,12 +419,13 @@ function generateSampleData() {
   return { asOf: null, facilitiesMaster, submissions };
 }
 
-let RAW = null;
+let RAW = null;         // { asOf, facilitiesMaster, submissions }
 let usingSample = true;
 let chartInstances = {};
 
 const selection = { lga: '', ward: '', facility: '', months: new Set(), weeks: new Set() };
 
+/* ---------------- Data loading ---------------- */
 async function loadData() {
   if (DATA_SOURCE_URL) {
     try {
@@ -436,6 +443,7 @@ async function loadData() {
   return generateSampleData();
 }
 
+/* ---------------- Aggregation helpers ---------------- */
 function monthsPresent(raw) {
   const set = new Set(raw.submissions.map(s => s.month));
   return MONTH_ORDER.filter(m => set.has(m));
@@ -494,6 +502,7 @@ function computeTrend(raw, lga, ward) {
 function statusFor(rate) { return rate >= 80 ? 'good' : rate >= 50 ? 'warning' : 'critical'; }
 function fmtPct(n) { return `${n.toFixed(1)}%`; }
 
+/* ---------------- Breadcrumb & filters ---------------- */
 function renderBreadcrumb() {
   const parts = [{ label: 'State', level: 'state' }];
   if (selection.lga) parts.push({ label: selection.lga, level: 'lga' });
@@ -593,6 +602,7 @@ document.getElementById('facilitySelect').addEventListener('change', (e) => {
   selection.facility = e.target.value; render();
 });
 
+/* ---------------- Rendering ---------------- */
 function renderFreshness(raw) {
   const el = document.getElementById('freshnessBanner');
   const text = document.getElementById('freshnessText');
@@ -688,6 +698,7 @@ function renderLineOrBarChart(canvasId, key, type, labels, values, tooltipFmt, i
 }
 
 function renderTable(rows, level) {
+  // rows: [{name, expected, submitted}]; level: 'lga' | 'ward' | 'facility' — what a click drills into
   const headLabel = level === 'lga' ? 'LGA' : level === 'ward' ? 'Ward' : 'Facility';
   const body = rows.map(r => {
     const rate = r.expected ? (r.submitted / r.expected * 100) : 0;
@@ -808,6 +819,7 @@ function renderMain(periodSubs) {
 function renderDataQuality(periodSubs) {
   const scoped = scopedSubs(periodSubs, selection.lga || null, selection.ward || null, selection.facility || null);
   document.getElementById('dqHeading').textContent = `Data quality checks — ${currentScopeLabel()}`;
+  // duplicate detection: >1 submission for the same facility+month+week
   const counts = {};
   scoped.forEach(s => { const k = scopeKey(s) + '|' + s.month + s.week; counts[k] = (counts[k] || 0) + 1; });
   const dupes = Object.entries(counts).filter(([, c]) => c > 1);
@@ -835,6 +847,7 @@ function renderMissing(periodSubs) {
     missing.map(r => `<li>${r.name} — ${r.expected - r.submitted} of ${r.expected} not yet reported</li>`).join('') + `</ul>`;
 }
 
+/* ---------------- Export ---------------- */
 function rowsToSheetData(subs) {
   return subs.map(s => {
     const row = { Month: s.month, Week: s.week, LGA: s.lga, Ward: s.ward, Facility: s.facility, Timestamp: s.tsISO };
@@ -898,6 +911,7 @@ async function downloadCharts() {
 document.getElementById('downloadExcelBtn').addEventListener('click', downloadExcel);
 document.getElementById('downloadChartsBtn').addEventListener('click', downloadCharts);
 
+/* ---------------- Orchestration ---------------- */
 function render() {
   renderBreadcrumb();
   const periodSubs = periodFilter(RAW.submissions);
